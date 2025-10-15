@@ -1,0 +1,968 @@
+{
+  "name": "Relevance Summary and message",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-bcbe5a.stack.tryrelevance.com/latest/studios/cc3c9217-d8bb-4c99-a01b-f52e513cd74d/trigger_webhook?project=af88369c08ad-48fd-bd28-c2d3f3cffcea",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $env.RELEVANCE_AUTH }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.Linkedin_urls }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        768,
+        160
+      ],
+      "id": "f34fafc3-7992-4308-a5dd-b520c88df184",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This will extract and flatten each profile inside Linkedin_full.data\nreturn items.flatMap(item => {\n  const data = item.json?.Linkedin_full?.data;\n\n  // If no data or data is not an array/object, skip\n  if (!data) return [];\n\n  // Normalize data into an array\n  const profiles = Array.isArray(data) ? data : [data];\n\n  // Create a new item for each profile\n  return profiles.map(profile => ({\n    json: {\n      ...profile // Flatten profile fields to top-level json\n    }\n  }));\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        160
+      ],
+      "id": "343abecb-3250-44ea-9d4b-ab3499768ad9",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "37c396e7-4f3e-4f97-8a6e-7e8501fd09a1",
+              "name": "Linkedin_urls",
+              "value": "={{ $json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "e4165a66-6922-4f1f-a3c1-b655c7d9a0dd",
+              "name": "Personal_bio",
+              "value": "={{ $('Webhook').item.json.body.userSummary.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "73477b7c-5184-4dc3-b0cc-f581f4aaf80e",
+              "name": "Template",
+              "value": "={{ $json.templateContent }}",
+              "type": "string"
+            },
+            {
+              "id": "a919335b-219f-4d93-9f7d-805d910bc437",
+              "name": "Company",
+              "value": "={{ $json.company }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        160
+      ],
+      "id": "6c328b77-b8ae-46bc-9703-d48ad0e7d029",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f7dec691-2518-4085-be8a-ecfa1ee03a19",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        32,
+        160
+      ],
+      "id": "adfbe2eb-b28c-49c2-ad96-8da544b042da",
+      "name": "Webhook",
+      "webhookId": "f7dec691-2518-4085-be8a-ecfa1ee03a19"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.selectedLeads",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        288,
+        160
+      ],
+      "id": "f2118e0e-560a-40dd-92c2-29503b1cd04e",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2dc6a167-ca68-4bbd-98e8-8ee89960c8f1",
+              "name": "subject",
+              "value": "={{ $json.output.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "144bb59e-7e62-46ee-aa7f-3952bc52f071",
+              "name": "content",
+              "value": "={{ $json.output.content }}",
+              "type": "string"
+            },
+            {
+              "id": "cfc80982-0930-422b-9b39-e4cc9820848f",
+              "name": "email",
+              "value": "={{ $('Hunter2').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "5d0df895-9e96-4aeb-9255-172cf9749120",
+              "name": "email confidence",
+              "value": "={{ $('Hunter2').item.json.score }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2032,
+        160
+      ],
+      "id": "db646916-2293-4549-bc77-357d50a05e89",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"subject\": \"example\",\n\t\"content\": \"content\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1824,
+        336
+      ],
+      "id": "3c5ae70b-03e4-4385-ab1e-3ab8e1b54677",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1632,
+        336
+      ],
+      "id": "56a661bd-a42c-4906-8369-2bd7b1b7e3e1",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "iRTvCrBqvmqeE9YG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "====INPUT DATA===\nRecipient:\n- Full Name: {{ $('Code2').item.json.full_name }}\n- Job Title: {{ $('Code2').item.json.job_title }}\n- Company: {{ $json['company'] }}\n- Location: {{ $('Code2').item.json.city }}\n- LinkedIn: {{ $('Code2').item.json.linkedin_url }}\n- Work Experience: \n1. {{ $('Code2').item.json.experiences[0].company }}\n{{ $('Code2').item.json.experiences[0].title }}\n{{ $('Code2').item.json.experiences[0].description }}\nis current: {{ $('Code2').item.json.experiences[0].is_current }}\n2. {{ $('Code2').item.json.experiences[1].company }}\n{{ $('Code2').item.json.experiences[1].title }}\n{{ $('Code2').item.json.experiences[1].description }}\nIs current: {{ $('Code2').item.json.experiences[1].is_current }}\n3.{{ $('Code2').item.json.experiences[2].company }}\n{{ $('Code2').item.json.experiences[2].title }}\n{{ $('Code2').item.json.experiences[2].description }}\nis current: {{ $('Code2').item.json.experiences[2].is_current }}\n4. {{ $('Code2').item.json.experiences[3].company }}\n{{ $('Code2').item.json.experiences[3].title }}\n{{ $('Code2').item.json.experiences[3].description }}\n{{ $('Code2').item.json.experiences[3].location }}\nis current: {{ $('Code2').item.json.experiences[3].is_current }}\n- Education: 1 {{ $('Code2').item.json.educations[0].school }}: {{\n$('Code2').item.json.educations[0].degree }}\n{{ $('Code2').item.json.educations[0].activities }}{{ $('Code2').item.json.educations[0].end_year }}\n2 {{ $('Code2').item.json.educations[1].school }},{{ $('Code2').item.json.educations[1].activities }}: {{ $('Code2').item.json.educations[1].degree }}:{{ $('Code2').item.json.educations[1].field_of_study }}\n3 {{ $('Code2').item.json.educations[2].school }}:{{ $('Code2').item.json.educations[2].field_of_study }}:{{ $('Code2').item.json.educations[2].degree }}:{{ $('Code2').item.json.educations[2].activities }}\n- Recent Activity / About: {{ $('Code2').item.json.about }}\n- Company Description: {{ $('Code2').item.json.company_description }}\n\nSender (Student):\n- Bio: {{ $('Edit Fields').item.json.Personal_bio }}\nYou are a college student who is an networking expert.\nthe users end goal is {{ $('Webhook').item.json.body.networkingGoal }} and their dream company is {{ $('Edit Fields').item.json.Company }}. this company should be mentioned in the cold email. \ncraft the perfect cold email + subject line that: \nClearly identifies what this person values, what their goals are, and any challenges they might face (based on their job, industry, or company stage).\n\nPersonalizes the message with a reference to something specific they’ve done, written, built, or posted.\n\nKeeps the tone curious, humble, and high-energy — not transactional or generic.\n\nIncludes a punchy, personalized, curiosity-driven subject line.\n\n**keeps messages under 125 words**\n**never use em dashes**\n**always come up with some sort of personalization angle!!!** (without hallucinating)\nAvoids robotic language or vague platitudes. Be human. dont use overly complex words.\n\nexample message content:\nSubject Line: \n{{ $('Webhook').item.json.body.selectedLeads[0].subjectLine }} - do not hallucinate any specific personal connections like school or location. \nexamples: {{ $('Webhook').item.json.body.subjectExamples }}\nAlways have some sort of commonground or shared opinion/something. \nBody:\n{{ $('Edit Fields').item.json.Template }}\n- do not hallucinate any personal connections. only mention specific information from the personal bio. \nif they care about something, mention it and find a way to personally relate to it. \n\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a helpful assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        1632,
+        160
+      ],
+      "id": "f6824d09-cfe4-4d7e-8839-ee9066c0d079",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d0a6e78c-de4c-4a6e-ac94-58e608ba135d",
+              "leftValue": "={{ $json.body.networkingType }}",
+              "rightValue": "email",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        -336
+      ],
+      "id": "139a7ece-9a5b-463d-adee-a5e7d60b5d75",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-bcbe5a.stack.tryrelevance.com/latest/studios/cc3c9217-d8bb-4c99-a01b-f52e513cd74d/trigger_webhook?project=af88369c08ad-48fd-bd28-c2d3f3cffcea",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $env.RELEVANCE_AUTH }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.Linkedin_urls }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        704,
+        -320
+      ],
+      "id": "f0584eee-da35-42cd-8d46-5e27812ce3f4",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This will extract and flatten each profile inside Linkedin_full.data\nreturn items.flatMap(item => {\n  const data = item.json?.Linkedin_full?.data;\n\n  // If no data or data is not an array/object, skip\n  if (!data) return [];\n\n  // Normalize data into an array\n  const profiles = Array.isArray(data) ? data : [data];\n\n  // Create a new item for each profile\n  return profiles.map(profile => ({\n    json: {\n      ...profile // Flatten profile fields to top-level json\n    }\n  }));\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -320
+      ],
+      "id": "ff458ad7-2ec0-439e-a524-80658056cbf8",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "37c396e7-4f3e-4f97-8a6e-7e8501fd09a1",
+              "name": "Linkedin_urls",
+              "value": "={{ $json.linkedin_url }}https://www.linkedin.com/in/dylan-butera-4b6b96170/",
+              "type": "string"
+            },
+            {
+              "id": "e4165a66-6922-4f1f-a3c1-b655c7d9a0dd",
+              "name": "Personal_bio",
+              "value": "={{ $('Webhook').item.json.body.userSummary.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "73477b7c-5184-4dc3-b0cc-f581f4aaf80e",
+              "name": "Recruiter Template",
+              "value": "={{ $('Webhook').item.json.body.messageTemplates.recruiter }}",
+              "type": "string"
+            },
+            {
+              "id": "2b0bcf89-ab5a-403b-90de-c907facdc811",
+              "name": "Connection Template",
+              "value": "={{ $('Webhook').item.json.body.messageTemplates.connection }}",
+              "type": "string"
+            },
+            {
+              "id": "9987ac1b-3dd7-4eba-a4d9-cabf506f6729",
+              "name": "subject recruiter",
+              "value": "={{ $('Webhook').item.json.body.messageTemplates.recruiterSubject }}",
+              "type": "string"
+            },
+            {
+              "id": "6c67e898-5e71-4538-9aa6-86cd20b7f5d4",
+              "name": "subject connection",
+              "value": "={{ $('Webhook').item.json.body.messageTemplates.connectionSubject }}",
+              "type": "string"
+            },
+            {
+              "id": "bba0e2b0-d5ab-45ff-9575-3f319349f1fb",
+              "name": "networking type",
+              "value": "={{ $('Webhook').item.json.body.networkingType }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        544,
+        -320
+      ],
+      "id": "bc03affb-6a7a-4976-9897-d418bb5b1fe2",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.selectedLeads",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        336,
+        -320
+      ],
+      "id": "101caf73-a945-4d71-bc0b-0501941fb4eb",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "144bb59e-7e62-46ee-aa7f-3952bc52f071",
+              "name": "content",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "e8ff7a28-82d3-42d5-be41-51437c4f2a11",
+              "name": "Linkedin_urls",
+              "value": "={{ $('Edit Fields2').item.json.Linkedin_urls }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1696,
+        -320
+      ],
+      "id": "33c4cb2b-796a-4c80-b3b5-5bd99dfea3a3",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1296,
+        -208
+      ],
+      "id": "f578a9b7-1795-4be2-bf4e-9eb78e7aca74",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "iRTvCrBqvmqeE9YG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "====INPUT DATA===\nRecipient:\n- Full Name: {{ $json['full_name'] }}\n- Job Title: {{ $json['job_title'] }}\n- Company: {{ $json['company'] }}\n- Location: {{ $json['location'] }}\n- LinkedIn: {{ $json['linkedin_url'] }}\n- Work Experience: {{ \n  $json[\"experiences\"]\n    ? $json[\"experiences\"]\n        .map(exp => `${exp.title} at ${exp.company} (${exp.date_range})`)\n        .join(\"; \")\n    : \"N/A\"\n}}\n- Education: {{ \n  $json[\"educations\"]\n    ? $json[\"educations\"]\n        .map(ed =>\n          `${ed.degree || 'Degree'} at ${ed.school || 'Unknown School'} (${ed.date_range || 'Dates N/A'})`\n        )\n        .join(\"; \")\n    : \"N/A\"\n}}\n- Skills / Languages: {{ $json['languages'] }}\n- Recent Activity / About: {{ $json['about'] }}\n- Company Description: {{ $json['company_description'] }}\n\nSender (Student):\n- Bio: {{ $('Edit Fields2').item.json.Personal_bio }}\n🎯 OUTPUT GOAL\nGenerate a single, human-sounding LinkedIn connection message that:\n\nIs under 200 characters\n\nMentions something specific and true from the recipient’s profile (experience, activity, company, industry, values)\n\nShows curiosity or shared interest based on the sender’s bio\n\nUses casual, non-corporate tone\n**never use em dashes**\nHas no subject line\nmentions {{ $('Webhook').item.json.body.targetCompany }}\n\nAvoids flattery, generalities, and robotic phrases\nif {{ $json['job_title'] }}= recruiter, talent aquisition or related role use: \n{{ $('Webhook').item.json.body.messageTemplates.recruiter }}\n\nif any other job title: use\n{{ $('Webhook').item.json.body.messageTemplates.connection }}\n✍️ EXAMPLES (for inspiration, not output):\n\"Saw you’re in edtech investing at Reach — super aligned with what I’m exploring. Would love to connect and learn from your experience!\"\n\"Noticed you made the jump from consulting to startup ops — that’s the path I’m hoping to take too. Would love to connect and hear how that’s gone for you.\"",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        1296,
+        -320
+      ],
+      "id": "6e71e090-3cd8-47f5-b0fa-3eef9793e33b",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-bcbe5a.stack.tryrelevance.com/latest/studios/cc3c9217-d8bb-4c99-a01b-f52e513cd74d/trigger_webhook?project=af88369c08ad-48fd-bd28-c2d3f3cffcea",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $env.RELEVANCE_AUTH }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "=https://www.linkedin.com/in/brody-weinfurtner/"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        592,
+        -1040
+      ],
+      "id": "d02cd154-0700-4877-b19e-cd0314916d6b",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-bcbe5a.stack.tryrelevance.com/latest/studios/cc3c9217-d8bb-4c99-a01b-f52e513cd74d/trigger_webhook?project=af88369c08ad-48fd-bd28-c2d3f3cffcea",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "af88369c08ad-48fd-bd28-c2d3f3cffcea:sk-MzdkN2VmOTctNjI3Ni00ZmU5LTkzZDEtZjBjZWEwMzJmYjNk"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "=https://www.linkedin.com/in/brody-weinfurtner/"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1184,
+        -736
+      ],
+      "id": "ee281d24-ab4b-4ea8-bc71-504af1071ef1",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "operation": "emailFinder",
+        "domain": "={{ $('Split Out').item.json.companyDomain }}",
+        "firstname": "={{ $json.first_name }}",
+        "lastname": "={{ $json.last_name }}"
+      },
+      "type": "n8n-nodes-base.hunter",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        160
+      ],
+      "id": "73044e06-552d-4b8a-b16a-994dd6f2e967",
+      "name": "Hunter2",
+      "credentials": {
+        "hunterApi": {
+          "id": "pXGflEe5MKtCVYJ6",
+          "name": "Hunter account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## Linkedin Scraper API",
+        "height": 240,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        560,
+        80
+      ],
+      "id": "88b17301-a6b0-4efe-990f-c4123842aa6c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Find Lead Email Address via Hunter API",
+        "height": 272,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        960,
+        48
+      ],
+      "id": "a03dd40e-aeab-49a0-8677-1977d6f6060a",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Prompt for messages",
+        "height": 240,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        96
+      ],
+      "id": "7ab0728d-87aa-4f7a-a971-c4ef757cc9f4",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Classify if Linkedin connection request or Email Message",
+        "height": 240,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        176,
+        64
+      ],
+      "id": "3165bb5e-162a-4c37-a0ed-3535ccb8459c",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Take info from website",
+        "height": 240,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        64
+      ],
+      "id": "5f18a601-32ea-4f27-aeee-5bc0e235aae2",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Linkedin Scraper API",
+        "height": 240,
+        "width": 320,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        512,
+        -368
+      ],
+      "id": "c3f911d5-29cf-4aea-8c6e-99f1db60a756",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Prompt for messages",
+        "height": 240,
+        "width": 336,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        -368
+      ],
+      "id": "ea331145-59b1-44d7-919d-1b730dfb2b3e",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Final Output",
+        "height": 240,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1936,
+        96
+      ],
+      "id": "48ff6680-1237-4bc2-a39c-cc15bb47aaca",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## Final Output",
+        "height": 240,
+        "width": 208,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        -384
+      ],
+      "id": "fa533b4d-7658-4c4d-bb81-d2e9effe0be8",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## All data sent to AI as context",
+        "height": 240,
+        "width": 288,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        96
+      ],
+      "id": "5f9a0d95-8842-4243-a637-79ef523f11e0",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## All data sent to AI as context",
+        "height": 240,
+        "width": 288,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        976,
+        -368
+      ],
+      "id": "5ed22ebe-d1b4-40fe-94e7-a15e54c42bdc",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## Cold Email",
+        "height": 96,
+        "width": 208,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        336,
+        352
+      ],
+      "id": "0cf5d485-df7b-48b4-a963-4281f78afb9a",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "## Linkedin Connection request",
+        "height": 112,
+        "width": 246,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -432
+      ],
+      "id": "47398d0a-f0f7-4d4c-8ada-9dae4663f0df",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "### Created by Brody Weinfurtner",
+        "height": 80,
+        "width": 160,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -432
+      ],
+      "id": "10b985a0-78af-4d3f-9f18-8b758f6c9fcb",
+      "name": "Sticky Note13"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Hunter2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        []
+      ]
+    },
+    "Hunter2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2913e326-f3be-4d57-adb9-b7f96cd4390c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ed67dfc8a408719fcfe8484eff0b3c277fcef7ec84a4e09a4b92770d0f95c5e8"
+  },
+  "id": "n8XUMT2fpPCr3Xpx",
+  "tags": []
+}

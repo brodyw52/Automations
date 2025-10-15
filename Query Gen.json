@@ -1,0 +1,310 @@
+{
+  "name": "Query Gen",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6360b1ef-cc87-4d3b-80e8-bb7f792db7fe",
+              "name": "company",
+              "value": "={{ $json.body.target.company }}",
+              "type": "string"
+            },
+            {
+              "id": "c072baf6-c504-4a4c-9d59-df52050edd9f",
+              "name": "role",
+              "value": "={{ $json.body.target.role }}",
+              "type": "string"
+            },
+            {
+              "id": "f0675e94-0557-41d9-88fe-25c9776adab1",
+              "name": "location",
+              "value": "={{ $json.body.target.location }}",
+              "type": "string"
+            },
+            {
+              "id": "e7a2dd4b-7960-4bee-aa6d-d4b6303d617c",
+              "name": "school",
+              "value": "={{ $json.body.target.alumni_schools }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        144
+      ],
+      "id": "23d6de02-62ae-4d71-861d-bdaf254bf3ad",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=<role>\nYou are an elite Web Search Query Generator trained in recruiting logic and hiring funnel dynamics. Your mission is to help users network into competitive roles by generating precision-targeted Google queries that surface LinkedIn profiles of people who are most likely to influence hiring decisions.\n</role>\n\n<instructions>\nUse the following inputs to generate **4 distinct raw Google search queries**, each starting with `site:linkedin.com/in`. Your goal is to surface relevant decision-makers, potential mentors, or recruiters associated with the target company. You must follow the structure and role logic rules below.\n\nInputs:\n- Company: {{ $('Edit Fields').item.json.company }}  ← (Must be included in all queries)\n- Location: {{ $('Edit Fields').item.json.location }}\n- School: {{ $('Edit Fields').item.json.school }}\n- Roles: {{ $json.message.content }}  ← (Array of role titles)\n\nYour query structure must include:\n1. A broad functional role group from the roles list (e.g., peers or hiring managers)\n2. The user's school (only in one query)\n3. The target location (only in one query)\n4. A tightly defined role subset (e.g., recruiters, HR)\n\nUse `AND` to combine elements. Use `OR` within parentheses for role variants or synonyms. Wrap multi-word phrases in quotes.\n\nRules:\n- All queries must begin with `site:linkedin.com/in`\n- Only one query may include the school\n- Only one query may include the location\n- Avoid overlapping the same role sets between queries\n- Do **not** use filler words or conversational language\n- Do **not** include the full roles list in any query\n- If the company is large, make queries more targeted. If the company is small, make them broader.\n- Optimize for high-return, high-signal LinkedIn profiles\n\n</instructions>\n\n<output_format>\nsite:linkedin.com/in (\"{role}\" OR \"{role synonym}\") (\"{company}\") (\"{seniority keyword}\")\nsite:linkedin.com/in (\"{company}\") (\"{school}\")\nsite:linkedin.com/in (\"{company}\") (\"{location}\")\nsite:linkedin.com/in (\"{recruiter role}\" OR \"{HR synonym}\") (\"{company}\") (\"recruiter\" OR \"talent acquisition\")\n</output_format>\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        608,
+        144
+      ],
+      "id": "f6189805-2f41-49cd-9f12-d1c5093bd1c6",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "iRTvCrBqvmqeE9YG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $json.message?.content || \"\";\n\nconsole.log(\"Raw AI Output:\", rawText);\n\nconst lines = rawText\n  .split('\\n')\n  .map(line => line.trim())\n  .filter(line => line.length > 0 && line.includes(\"site:linkedin.com\"));\n\nconsole.log(\"Extracted lines:\", lines);\n\nif (lines.length === 0) {{{items.flatMap(item => {\nconst data = item.json?.Linkedin_full?.data;\nif (!data) return [];\nconst profiles = Array.isArray(data) ? data : [data];\nreturn profiles\n.filter(profile => profile.linkedin_url)\n.map(profile => ({ json: { linkedin_url: profile.linkedin_url } }));\n})}}\n  // Return dummy fallback for testing\n  return [{ json: { query: 'site:linkedin.com \"Investment Banking\" \"Goldman Sachs\"' } }];\n}\n\nreturn lines.map(query => ({\n  json: {\n    query\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        144
+      ],
+      "id": "334f70fe-2fc8-402a-88e6-cd01a21aa47d",
+      "name": "Code",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.query }}"
+            },
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "api_key",
+              "value": "={{ $env.SERPAPI_API_KEY }}"
+            },
+            {
+              "name": "num",
+              "value": "3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        144
+      ],
+      "id": "fcebb1c6-e92a-424b-8d3b-3c79891eced7",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Given the target role: {{ $json.role }}\n\nGenerate a list of **15 realistic and commonly used job titles** that would be valuable to reach out to in order to increase the chances of landing this role.\n\nInclude:\n- Managers or team leads in this function\n- Directors or department heads\n- Recruiters or talent acquisition roles\n- Current employees in this or adjacent roles\n- Recent new hires in the same function (but not interns)\n\nGuidelines:\n- All titles must be commonly found on LinkedIn\n- Titles should be generic and generalizable — no company names\n- Avoid titles that are too junior, obscure, or overly specific\n- No “coordinator,” “intern,” or “recent graduate” titles\n- Output should be plain text\n- One job title per line\n- No explanations, no numbering, no filler\n\nExample:\ninstead of saying: Wealth Management Manager just say \"wealth management\"\ninstead of saying \"wealth management recruiter\" say \"recruiter\" (keep roles that may be too specific general)\nthis is an example of the final query: site:linkedin.com/in (\"{role}\" OR \"{role synonym}\") (\"{company}\") (\"{seniority keyword}\") tailor responses to fit into this"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        304,
+        144
+      ],
+      "id": "ae3991f5-6811-4c1b-87a5-76211e803540",
+      "name": "Message a model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "iRTvCrBqvmqeE9YG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.flatMap(item =>\n  (item.json.organic_results || [])\n    .filter(r => typeof r.link === 'string' && r.link.includes(\"linkedin.com/in/\"))\n    .map(r => ({\n      json: {\n        linkedin: r.link.split(/[?#]/)[0],\n        title: r.title\n      }\n    }))\n);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1504,
+        144
+      ],
+      "id": "6ce6fb3e-e85a-4aeb-9c24-7a5a846a1b87",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "e39f4a31-5641-4b17-aec7-07d692924574",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        144
+      ],
+      "id": "c3b97fa8-b074-4b73-9e6b-fe4d9ebc92ab",
+      "name": "Webhook",
+      "webhookId": "e39f4a31-5641-4b17-aec7-07d692924574"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b43ec74f-0cf3-460c-9f08-d4c92e01d133",
+              "name": "linkedin_urls",
+              "value": "={{ $json.linkedin }}",
+              "type": "string"
+            },
+            {
+              "id": "2af436a5-524e-40c8-853f-2e2d7d485e32",
+              "name": "Title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1776,
+        144
+      ],
+      "id": "07889820-9571-499e-863a-fb0cd865fe82",
+      "name": "Edit Fields1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model2": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "485b6417-9415-44bd-8176-1dba2671e553",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ed67dfc8a408719fcfe8484eff0b3c277fcef7ec84a4e09a4b92770d0f95c5e8"
+  },
+  "id": "u0fDuS0m4GdBuSdZ",
+  "tags": []
+}

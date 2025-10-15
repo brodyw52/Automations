@@ -1,0 +1,1422 @@
+{
+  "name": "Julie",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1f62a8d7-2859-41ce-b87d-d34777bfc19b",
+              "leftValue": "={{ $json.ups }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "1b3eb507-03e0-4cd3-8ebd-54bdfde787d5",
+              "leftValue": "={{ $json.selftext }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        480
+      ],
+      "id": "91ff9862-50d5-4b3d-ba98-7aab58691915",
+      "name": "Filter Upvotes + Text"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        320
+      ],
+      "id": "5ca78f79-0a33-42b1-a7c4-2a6ef65a33b7",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "g71bfhoq25In1lLJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        320
+      ],
+      "id": "c88a91f6-fd1a-4842-9591-d905e7244e26",
+      "name": "Think2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant for Whoa Dough, a gluten-free cookie-dough brand. Made from real ingredients, it's certified gluten-free, plant-based, dairy-free, and egg-free, making it a safe and delicious treat for everyone, especially those with food sensitivities.\nYou will be given a single Reddit post as JSON with these fields:\n\n• id  {{ $json.id }}\n• title  {{ $json.title }}\n• content  {{ $json.post }}\n\nDetermine whether this post is relevant for Whoa Dough to reply to with a product recommendation. A “relevant” post is one where the author:\n\n  • Is asking for gluten-free snack or cookie recommendations  \n  • Mentions “cookie dough,” “Whoa Dough,” or similar product terms  \n  • Describes a need or interest that Whoa Dough can solve  \n**OUTPUT**\n[\n  {\n    \"isRelevant\": (true or false)\n    \"reason\": brief reason\n    \"post\": {{ $json.post }}\n    \"title\": {{ $json.title }}\n    \"id\": {{ $json.id }}\n  }\n]\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1136,
+        144
+      ],
+      "id": "a01f9aa4-fd27-480b-a2de-c5acd789c565",
+      "name": "Post Relevance Classifier"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"isRelevant\": true,\n    \"reason\": \"The user describes the exact pain point our product solves\",\n    \"post\": \"I’ve been gluten free for several months now. When I first went gluten free, I experienced nausea, dizziness, and honestly felt worse. It took several WEEKS for those symptoms to subside.Recently, I ate something with gluten (as kind of a test) and the next day I had extreme debilitating fatigue. However, days 3-4 after eating gluten I have had the same level of nausea that I had when I first went gluten.It’s almost like my body “withdraws” or got a taste of gluten and is like “I want more” once it realizes I’m no longer giving it it and it’s out of my system after 72 hours.</p> <p>Can anyone relate? Could this nausea be from having gluten and then my body having gotten rid of it?\",\n    \"title\": \"Gluten Free Sickness\",\n    \"id\": \"t3_1miag28\"\n  }\n]\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1392,
+        320
+      ],
+      "id": "022a583e-3e97-4018-928f-c679fc2d6a59",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "subreddit": "glutenfree",
+        "keyword": "={{ $json.content }}",
+        "limit": 3,
+        "additionalFields": {
+          "sort": "new"
+        }
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        464,
+        544
+      ],
+      "id": "2a24daaf-6724-4756-879a-4d0fdc9fff09",
+      "name": "Search for a post",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "gyKLSrQXXINigkD7",
+          "name": "Reddit account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1f62a8d7-2859-41ce-b87d-d34777bfc19b",
+              "leftValue": "={{ $json.output[0].isRelevant }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1856,
+        624
+      ],
+      "id": "0e62ac8a-1d91-41bb-9bdf-932cedca171a",
+      "name": "Filter Upvotes + Text1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a real mom of two kids named Julie. You're not a marketer — you're just scrolling Reddit and casually responding to posts in a friendly, informal way. You're slightly messy, warm, and you make the occasional spelling or grammar mistake (but nothing major). You're excited when you find something that works for your family.\n\nSomeone on Reddit asked a question about gluten-free food:\n{{ $json.output[0].post }}\n\nWrite a natural, mom-like Reddit comment replying to that post. Keep it super short and casual. First sentence should relate directly to the person’s question with a quick piece of advice or something that worked for you. Then casually mention you found this brand recently (Woah Dough) that’s gluten free and actually good — no hype, just real mom talk. Do not sound like you’re trying to sell something. Mention your kids or experience naturally (e.g. “i just keep a few in the pantry now” or “my daughter actually likes them”)\n\nAvoid:\n\nAny promotional tone\n\nAny sales language\n\nAny overly clean grammar or punctuation\n\nOver-explaining or full sentences\n\nWrite like a regular mom with kids who found something helpful and is just chiming in\n\n2 sentences max. Spartan tone. No emojis. include id: {{ $json.output[0].id }} as one of the structured jsons.\n**output**\ncomment:__\nid:__\n(no quotes or anything besides the comment for the comment output)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2000,
+        128
+      ],
+      "id": "3a9b07fa-66ad-4cc2-a575-c9f43aa2aa58",
+      "name": "Comment Gen",
+      "credentials": {
+        "openAiApi": {
+          "id": "g71bfhoq25In1lLJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1616,
+        144
+      ],
+      "id": "341f6191-1bf9-4832-95db-602fb2af3fdb",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2512,
+        128
+      ],
+      "id": "957beb36-3fae-4dca-938b-b8ae49811fbb",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2768,
+        144
+      ],
+      "id": "258e2a39-eb89-46db-87af-f335f0e1a783",
+      "name": "Wait1",
+      "webhookId": "690b13c5-2652-4f98-9a80-0d09e7895f9b"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "location": "allReddit",
+        "keyword": "={{ $json.message.content }}",
+        "limit": 1,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        560,
+        -528
+      ],
+      "id": "da0df794-cd89-4682-9027-109c98c95b3c",
+      "name": "Search for a post1",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "gyKLSrQXXINigkD7",
+          "name": "Reddit account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "think of a single keyword search on reddit that would be normal for julie a mom of 3 in her 40s to be replying to. change it every time. trying to not be a bot so gen a variety.\n\nex:\n\"i’m so tired\"\n\n\"finally friday\"\n\n\"any moms here?\"\n\nreturn as just one keyword, no parenthesis."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        0,
+        -544
+      ],
+      "id": "5c65e8b0-ec94-4387-8823-11d5bac4bea6",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "g71bfhoq25In1lLJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a real mom of two kids named Julie. You're not a marketer — you're just scrolling Reddit and casually responding to posts in a friendly, informal way. You're slightly messy, warm, and you make the occasional spelling or grammar mistake (but nothing major). respons to the following post in a rushed and human way. no emojis.\n\nkeep responses ultra short and concise often times even an incomplete sentence. only go deeper if you need to. share an opinion or commentary. \n\n{{ $json.selftext }}\n\ndont say greetings like \"hi!\" dont end with a question or closing note. no fluff\nex: \nlmao thats so funny i was thinking the same thing\n\nyea my youngest just started walking the other day and it was crazy\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        800,
+        -528
+      ],
+      "id": "27e97e62-aed5-4151-a11b-d02db850e2a6",
+      "name": "Comment Gen1",
+      "credentials": {
+        "openAiApi": {
+          "id": "g71bfhoq25In1lLJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "postComment",
+        "postId": "={{ $('Search for a post1').item.json.id }}",
+        "commentText": "={{ $json.message.content }}"
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        -528
+      ],
+      "id": "abc019bd-447e-4c61-a4f8-3294952cf71e",
+      "name": "Create a comment in a post",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "gyKLSrQXXINigkD7",
+          "name": "Reddit account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "50984cc3-66e2-44cb-84bb-341442750d56",
+              "leftValue": "={{ $('Search for a post1').item.json.archived }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        -528
+      ],
+      "id": "b9bae156-3e2f-459b-8079-c4e3cb8821d4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1376,
+        -528
+      ],
+      "id": "32395f11-5db3-4fe1-8342-408252e43c9f",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "amount": 12,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        -528
+      ],
+      "id": "d64ee937-c2f0-469b-b83b-3322ea48b674",
+      "name": "Wait",
+      "webhookId": "e371e456-3f77-465a-8c48-af8e36754b11"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"name\": \"Set\",\n  \"type\": \"n8n-nodes-base.set\",\n  \"parameters\": {\n    \"values\": {\n      \"string\": [\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/glutenfree/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/Celiac/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/foodallergies/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/glutenfreevegan/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/GlutenFreeRecipes/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/SnackExchange/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/HealthyFood/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/vegan/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/TraderJoes/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/kidsfood/new/.rss\" },\n        { \"name\": \"url\", \"value\": \"https://www.reddit.com/r/FoodSensitive/new/.rss\" }\n      ]\n    }\n  },\n  \"typeVersion\": 1,\n  \"position\": [250,250]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1600,
+        -1152
+      ],
+      "id": "643f41c6-05cf-454c-bda6-6983881fe852",
+      "name": "Edit Fields2",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "92692bad-d74d-4f3f-8c32-a173757dc8fa",
+                    "leftValue": "={{ $json['batch '] }}",
+                    "rightValue": "promo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -624,
+        -624
+      ],
+      "id": "5f75fc4b-64d8-4f4b-8789-64465f0066a7",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "postComment",
+        "postId": "=",
+        "commentText": "={{ $json.message.content }}"
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        3008,
+        144
+      ],
+      "id": "fecface8-fe2b-4407-bee6-912649a42952",
+      "name": "Create a comment in a post1",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "RhgpI6CmSZdQ5Gwe",
+          "name": "Reddit account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "50984cc3-66e2-44cb-84bb-341442750d56",
+              "leftValue": "={{ $json.archived }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        528
+      ],
+      "id": "0de15cb2-d11f-4fad-83f5-24bddeda3d68",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "content": "Prompt for Message creation",
+        "height": 340,
+        "width": 308,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        0
+      ],
+      "id": "ea17f97c-1a02-499e-b538-a771ada016fe",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "DECOY",
+        "height": 272,
+        "width": 2224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -224,
+        -640
+      ],
+      "typeVersion": 1,
+      "id": "d1c2bf8a-e78c-4821-a05c-ef62e68b9edb",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.message.content }}",
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        -544
+      ],
+      "id": "1c750d85-861a-452e-9283-46c054b540d0",
+      "name": "Wait3",
+      "webhookId": "a59f6e63-70c6-4edd-b6cc-e435e5f80424"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "please pick a number between 2-7. just return the number only nothing else"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -288,
+        -784
+      ],
+      "id": "af6a4ad9-3a70-4aee-b9e2-d4c1c0e13caf",
+      "name": "Message a model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "g71bfhoq25In1lLJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://www.reddit.com/r/glutenfree/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        -352
+      ],
+      "id": "674bda5d-3dae-4deb-902c-00169664979d",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        64
+      ],
+      "id": "0c13fb89-a64f-4148-9a08-1ccc8cc0bbf6",
+      "name": "XML"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/Celiac/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        -224
+      ],
+      "id": "dcaaff35-bdb9-4538-91f3-73c4f3a14612",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/foodallergies/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        -96
+      ],
+      "id": "45a436b7-b963-49c8-931e-54dc6c74e630",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/glutenfreevegan/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        32
+      ],
+      "id": "7fd38812-702f-47c3-bf9f-f9333dc63435",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/GlutenFreeRecipes/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        160
+      ],
+      "id": "4de186cc-f746-4ea0-8ef3-665c580dbb1d",
+      "name": "HTTP Request4"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/SnackExchange/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        288
+      ],
+      "id": "a716f9da-005a-4548-ba47-a916a28ef608",
+      "name": "HTTP Request5"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/vegan/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        416
+      ],
+      "id": "bbd8e152-ce6c-4380-b908-94226b352e90",
+      "name": "HTTP Request6"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/TraderJoes/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        544
+      ],
+      "id": "3684bca2-463e-48fc-83a6-d501051daf61",
+      "name": "HTTP Request7"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/FoodSensitive/new/.rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "User-agent"
+            },
+            {
+              "name": "value",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        672
+      ],
+      "id": "75e5f323-6b25-4979-ae5c-29699f66e9f9",
+      "name": "HTTP Request8"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8dea03d3-b53d-4683-9e03-32cec8b4106f",
+              "name": "company description",
+              "value": "Woah Dough is a crave-worthy, gluten-free, cookie dough that’s made to be enjoyed raw or baked — without compromise. Made from real ingredients, it's certified gluten-free, plant-based, dairy-free, and egg-free, making it a safe and delicious treat for everyone, especially those with food sensitivities.  Perfect for:  Grab-and-go snacking  On-campus allergen-friendly options  Baking fresh cookies in minutes  Lunchboxes, late-night cravings, and guilt-free indulgence  With a chewy, nostalgic flavor and a soft, doughy texture, Woah Dough tastes like your childhood — minus the gluten. Available in individually wrapped bars or bulk formats for retail, dining halls, and cafeterias.",
+              "type": "string"
+            },
+            {
+              "id": "58ea19a4-3d72-4f30-aa30-86d651daa265",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "f1538455-dc90-4326-a5d9-33e93f60f493",
+              "name": "post",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            },
+            {
+              "id": "2c4474c9-47de-4be7-8d22-5b2f37f18e1a",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        128
+      ],
+      "id": "c8def4c6-6bbd-492d-a31f-499e2c4db075",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Grab the array of entries\nconst entries = (items[0].json.feed && items[0].json.feed.entry) || [];\nconst output = [];\n\nfor (const entry of entries) {\n  // id sometimes comes back as a plain string, or as { _: '…' }\n  const rawId = entry.id;\n  const id    = rawId && typeof rawId === 'object' ? rawId._ : rawId || '';\n  \n  output.push({\n    json: {\n      id,                                  // ← your new ID field\n      title:     entry.title   || '',\n      content:   (entry.content && entry.content._) || '',\n      published: entry.published|| '',\n      updated:   entry.updated  || '',\n      author:    (entry.author && entry.author.name) || ''\n    }\n  });\n}\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        224
+      ],
+      "id": "003a13c5-3039-46e2-8207-23a79dd05e6b",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "instructions": "filter out any content that doesnt include the keyword \"recommendations\" or \"recommend\" or \"suggest\" or \"gluten free cookie\" or \"gf cookie\" or \"recs\" or \"where can i find' or \"snack\" or \"advice\" or \"gluten free cookie dough\" or \"dough\"",
+        "codeGeneratedForPrompt": "filter out any content that doesnt include the keyword \"recommendations\" or \"recommend\" or \"suggest\" or \"gluten free cookie\" or \"gf cookie\" or \"recs\" or \"where can i find' or \"snack\" or \"advice\" or \"gluten free cookie dough\" or \"dough\"",
+        "jsCode": "const items = $input.all();\nconst keywords = [\n  \"recommendations\",\n  \"recommend\",\n  \"suggest\",\n  \"gluten free cookie\",\n  \"gf cookie\",\n  \"recs\",\n  \"where can i find\",\n  \"snack\",\n  \"advice\",\n  \"gluten free cookie dough\",\n  \"dough\",\n];\n\nconst filteredItems = items.filter((item) => {\n  return keywords.some((keyword) =>\n    item?.json?.title.toLowerCase().includes(keyword.toLowerCase()),\n  );\n});\n\nreturn filteredItems;\n"
+      },
+      "type": "n8n-nodes-base.aiTransform",
+      "typeVersion": 1,
+      "position": [
+        48,
+        -16
+      ],
+      "id": "affde3cd-ddc6-42e3-98b6-c5ba9bd42a09",
+      "name": "AI Transform"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9ed72be2-c65b-45fe-957b-b625dce6a6b5",
+              "leftValue": "={{ $json.output[0].isRelevant }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1648,
+        144
+      ],
+      "id": "88b85c35-77c0-442d-b9ad-ebeb4a0e6cf3",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Assume `items[0].json` contains your parsed XML object from the XML node\nconst feed = items[0].json.feed;\n\n// Map over each entry in the feed\nconst extracted = feed.entry.map(e => {\n    return {\n        title: e.title,\n        content: e.content._,\n        id: e.id\n    };\n});\n\n// Return as new items\nreturn extracted.map(e => ({ json: e }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        352
+      ],
+      "id": "6ab0741f-493a-4427-92af-2aa451ef708a",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Filter Upvotes + Text": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Post Relevance Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Post Relevance Classifier",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Relevance Classifier": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Post Relevance Classifier",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search for a post": {
+      "main": [
+        []
+      ]
+    },
+    "Filter Upvotes + Text1": {
+      "main": [
+        []
+      ]
+    },
+    "Comment Gen": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request5",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request6",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request7",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request8",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Create a comment in a post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Search for a post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search for a post1": {
+      "main": [
+        [
+          {
+            "node": "Comment Gen1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comment Gen1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a comment in a post": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Create a comment in a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        []
+      ]
+    },
+    "Switch": {
+      "main": [
+        []
+      ]
+    },
+    "Create a comment in a post1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        []
+      ]
+    },
+    "Message a model2": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request5": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request6": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request7": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request8": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Post Relevance Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "AI Transform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Transform": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Comment Gen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4cbb67f2-9dc9-4d41-b06f-989f48c7b00d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ed67dfc8a408719fcfe8484eff0b3c277fcef7ec84a4e09a4b92770d0f95c5e8"
+  },
+  "id": "JAhHVJsys2c3cWUJ",
+  "tags": []
+}

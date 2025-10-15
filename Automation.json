@@ -1,0 +1,449 @@
+{
+  "name": "My workflow 7",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -80
+      ],
+      "id": "7b72423b-8d0b-4c6e-85f0-dd5616ac0df5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "76d256b3-2e5c-4ec2-93c6-28e8179f9bf5",
+              "name": "linkedin_url",
+              "value": "={{ $json.Linkedin_urls }}",
+              "type": "string"
+            },
+            {
+              "id": "d0c3a903-1ff8-417d-b66f-f4ca8c7dc5d1",
+              "name": "email",
+              "value": "={{ $json.Emails }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        -80
+      ],
+      "id": "02bc24d3-d427-4f2b-885b-056b56cd0317",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-bcbe5a.stack.tryrelevance.com/latest/studios/cc3c9217-d8bb-4c99-a01b-f52e513cd74d/trigger_webhook?project=af88369c08ad-48fd-bd28-c2d3f3cffcea",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $env.RELEVANCE_AUTH }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.linkedin_url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        -80
+      ],
+      "id": "3344f8d4-9537-46ea-af6d-a4df696d2e24",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1az9slBO3YYWTmxMd6T8iZriEFxNo1TBxLkDQRaTF2pg",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1az9slBO3YYWTmxMd6T8iZriEFxNo1TBxLkDQRaTF2pg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Reach out info",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1az9slBO3YYWTmxMd6T8iZriEFxNo1TBxLkDQRaTF2pg/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -384,
+        -80
+      ],
+      "id": "fa74f428-bed3-4112-80ba-7d58ac9f4f28",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cwoQd72USRhmvGft",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=http://{{ $json.Linkedin_full.data.company_domain }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        128,
+        416
+      ],
+      "id": "497fbcf6-9e67-4b0a-93b7-733e7fc12100",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You're a helpful, intelligent expert sales assistant.\nWe just scraped a series of web pages for a business called, as well as a persons personal profile. Your task is to take their summaries and turn them into catchy, personalized openers for a cold email campaign to imply that the rest of the campaign is personalized.\n\nProfile: \nfull name: {{ $('HTTP Request').item.json.Linkedin_full.data.full_name }}\nLocation {{ $('HTTP Request').item.json.Linkedin_full.data.location }}\nState: {{ $('HTTP Request').item.json.Linkedin_full.data.hq_region }}\ntitle: {{ $('HTTP Request').item.json.Linkedin_full.data.experiences[0].title }}\njoin year: {{ $('HTTP Request').item.json.Linkedin_full.data.current_company_join_year }}\nEducation: {{ $('HTTP Request').item.json.Linkedin_full.data.educations[0].school }}\nRecent Experience: {{ $('HTTP Request').item.json.Linkedin_full.data.experiences[0].company }},{{ $('HTTP Request').item.json.Linkedin_full.data.experiences[0].description }}\nRole description: {{ $('HTTP Request').item.json.Linkedin_full.data.experiences[0].description }}\n\nSkills: {{ $('HTTP Request').item.json.Linkedin_full.data.experiences[2].skills }}\n\nYou'll return your icebreakers in the following JSON format:\n\n{\nHi (first name),  I saw that you are the (title) at (school name) and are focused on (one of their specific non-generic/non-high levle objectives that you know you can solve) so I wanted to send you a quick note about my company.\nAt Woah Dough, we offer gluten free, allergy friendly cookies and bars that actually taste good\nWe are already in other schools in your area such as Villanova and Mercyhurst as well as various other colleges across the country, so far, we have been validated and continue to stand out as one of the best tasting GF/allergy friendly cookies on the market.\nIf you're curious, you can check us out here:\nwoahdough.com/wholesale\nOr let us know how you'd want to receive a sample:\n[Sample Request Form Link]\nThanks for your time,\nBrody\n\n}\n\n\nRules:\n- Write in a spartan/laconic tone of voice.\n- Make sure to use the above format when constructing your icebreakers. We wrote it this way on purpose.\n- Shorten the company name wherever possible (say, \"XYZ\" instead of \"XYZ Agency\"). More examples: \"Love AMS\" instead of \"Love AMS Professional Services\", \"Love Mayo\" instead of \"Love Mayo Inc.\", etc.\n- Do the same with locations. \"San Fran\" instead of \"San Francisco\", \"BC\" instead of \"British Columbia\", etc.\n- For your variables, focus on small, non-obvious things to paraphrase. The idea is to make people think we *really* dove deep into their website, so don't use something obvious. Do not say cookie-cutter stuff like \"Love your website!\" or \"Love your take on marketing!\".\n- ONLY RESPOND ONCE, DO NOT REPEAT YOURSELF"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        640,
+        416
+      ],
+      "id": "8a92ba43-0481-436f-a6d1-5a9614adf1d2",
+      "name": "Generate Multiline Icebreaker",
+      "credentials": {
+        "openAiApi": {
+          "id": "g71bfhoq25In1lLJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You're a sharp, concise sales assistant. We’ve scraped a target university contact. Your job is to generate a short, catchy, non-obvious cold email opener under 30 words that feels deeply personalized.\n\nYou must follow this exact format:\n\nscss\nCopy\nEdit\nSaw you’ve been the (role) at (SchoolName) for (X)+ years and recently [non-obvious LinkedIn detail] — that stood out.\nInstructions:\n\nDo not include any greeting like “Hi” or “Hello”.\n\nDo not use any line breaks, \\n, or multi-line formatting.\n\nDo not invent any data not in the profile.\n\nDo not praise generically or say anything templated (\"Love your school\", etc.).\n\nUse short forms for company names and places (e.g. “Emory” not “Emory University”, “San Fran” not “San Francisco”).\n\nBe direct, minimal, and real.\n\nThis is only the opening line — no pitch, no call to action, no closing.\n\nReturn a single clean sentence in plain text, formatted exactly as shown.\n\nAvailable fields:\n\nfull name: {{ $('HTTP Request').item.json.Linkedin_full.data.full_name }}\n\nlocation: {{ $('HTTP Request').item.json.Linkedin_full.data.location }}\n\nstate: {{ $('HTTP Request').item.json.Linkedin_full.data.hq_region }}\n\ntitle: {{ $('HTTP Request').item.json.Linkedin_full.data.experiences[0].title }}\n\njoin year: {{ $('HTTP Request').item.json.Linkedin_full.data.current_company_join_year }}\n\neducation: {{ $('HTTP Request').item.json.Linkedin_full.data.educations[0].school }}\n\nrecent company: {{ $('HTTP Request').item.json.Linkedin_full.data.experiences[0].company }}\n\nrole description: {{ $('HTTP Request').item.json.Linkedin_full.data.experiences[0].description }}\n\nskills: {{ $('HTTP Request').item.json.Linkedin_full.data.experiences[2].skills }}\n\nNon-obvious detail = must come from their description or skills — no top-line titles, logos, or easily visible info.\n\nExample Output:\n\nSaw you’ve been the Director of Dining at Emory for 4+ years and recently rolled out self-checkout kiosks in freshman housing — that stood out.\n\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        288,
+        -80
+      ],
+      "id": "7b98e07b-5133-4ad3-bab0-49ad61b03e0c",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "g71bfhoq25In1lLJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1az9slBO3YYWTmxMd6T8iZriEFxNo1TBxLkDQRaTF2pg",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1az9slBO3YYWTmxMd6T8iZriEFxNo1TBxLkDQRaTF2pg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 214693752,
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1az9slBO3YYWTmxMd6T8iZriEFxNo1TBxLkDQRaTF2pg/edit#gid=214693752"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Linkedin URL": "={{ $('Edit Fields').item.json.linkedin_url }}",
+            "Personalized Message": "={{ $json.message.content }}",
+            "Email": "={{ $('Edit Fields').item.json.email }}",
+            "Name": "={{ $('HTTP Request').item.json.Linkedin_full.data.full_name }}",
+            "Phone #": "={{ $('HTTP Request').item.json.Linkedin_full.data.phone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Linkedin URL",
+              "displayName": "Linkedin URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Personalized Message",
+              "displayName": "Personalized Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone #",
+              "displayName": "Phone #",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Responded y/n",
+              "displayName": "Responded y/n",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1136,
+        -80
+      ],
+      "id": "2ba4b6de-f0b5-4c60-92f1-004900bf5902",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cwoQd72USRhmvGft",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst filteredItems = items.filter(\n  (item) => item?.json[\"Linkedin urls\"] !== \"empty\",\n);\nreturn filteredItems;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        -80
+      ],
+      "id": "1d4347ab-ea6e-4cc6-a590-2cadb233bf0f",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        -80
+      ],
+      "id": "7c7954d9-5af9-4baf-b0c0-8bed6332da42",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1) Pull the raw content from your OpenAI response\nconst raw = $json.message.content;\n\n// 2) Strip any leading “{” and trailing “}”\nconst noBraces = raw.replace(/^\\s*{\\s*/, '').replace(/\\s*}\\s*$/, '').trim();\n\n// 3) Turn literal “\\n” sequences into real line breaks\nconst withRealNL = noBraces.replace(/\\\\n/g, '\\n');\n\n// 4) Split on those line breaks and wrap with <br><br> for HTML paragraphs\nconst htmlified = withRealNL\n  .split(/\\r?\\n+/)        // split on one or more newlines\n  .map(line => line.trim())\n  .filter(line => line)   // remove empty lines\n  .join('<br><br>');      // double <br> between paragraphs\n\n// 5) Output it as your personalization field\nreturn [{\n  json: {\n    personalization: htmlified\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        32
+      ],
+      "id": "5d63bdf5-4b0c-4b07-90a4-bc3d6be3d1f3",
+      "name": "Code2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        []
+      ]
+    },
+    "Generate Multiline Icebreaker": {
+      "main": [
+        []
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d5c795b5-2090-4040-abe8-2a849c754075",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ed67dfc8a408719fcfe8484eff0b3c277fcef7ec84a4e09a4b92770d0f95c5e8"
+  },
+  "id": "Nv7En7cZPclxcJpz",
+  "tags": []
+}
